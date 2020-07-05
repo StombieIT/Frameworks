@@ -66,3 +66,16 @@ class DataBase(sqlite3.Connection):
 		self.cursor.execute("SELECT * FROM {t} WHERE {c}".format(t=table, c=' AND '.join(crit)))
 		for request in self.cursor.fetchall():
 			yield request
+	def search_with_or(self, table, **kwargs):
+		'''
+		table is the name of table you want to use
+		kwargs is arguments in which key serves as
+		name of var and the value of it serves as
+		condition of searching with using operator 'OR'
+		between conditions
+		'''
+		assert len(kwargs) > 1
+		crit = ["{v} {c}".format(v=key.strip(), c=value.strip()) for key, value in kwargs.items()]
+		self.cursor.execute("SELECT * FROM {t} WHERE {c}".format(t=table, c=' OR '.join(crit)))
+		for request in self.cursor.fetchall():
+			yield request
