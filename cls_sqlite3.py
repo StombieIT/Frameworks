@@ -22,7 +22,6 @@ class DataBase(sqlite3.Connection):
 	def search_with_and(self, table, **kwargs):
 		assert len(kwargs) > 1
 		crit = ["{v} {c}".format(v=key.strip(), c=value.strip()) for key, value in kwargs.items()]
-		#print("SELECT * FROM {t} WHERE {c}".format(t=table, c=' AND '.join(crit)))
 		self.cursor.execute("SELECT * FROM {t} WHERE {c}".format(t=table, c=' AND '.join(crit)))
 		self.db.commit()
 		for request in self.cursor.fetchall():
