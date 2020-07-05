@@ -1,45 +1,36 @@
-import sqlite3 as sql
-class DataBase ():
-	def __init__(self, name = 'database.db', table = 'users', **var):
-		self.name = name
-		self.table = table
-		variables = []
-		for i in var.keys():
-			variables.append(i.strip() + ' ' + var[i].strip())
-		self.variables = variables
-		variables_sqlite3_format = ''
-		for i in range(len(variables) - 1):
-			variables_sqlite3_format += variables[i] + ', '
-		else:
-			variables_sqlite3_format += variables[len(variables) - 1]
-		self.db = sql.connect(self.name)
+class DataBase(sqlite3.Connection):
+	def __init__(self, filename):
+		self.filename = filename
+		self.db = sqlite3.Connection(self.filename)
 		self.cursor = self.db.cursor()
-		self.cursor.execute(f"CREATE TABLE IF NOT EXISTS {table} ({variables_sqlite3_format})")
-	def log(self, **value):
-		values_keys_list = []
-		values_values_list = []
-		for i in value.keys():
-			values_keys_list.append(i.strip())
-			values_values_list.append(str(value[i]).strip())
-		values_keys_sqlite3_format = ''
-		values_values_sqlite3_format = ''
-		for i in range(len(values_keys_list) - 1):
-			values_keys_sqlite3_format += values_keys_list[i] + ', '
-			values_values_sqlite3_format += values_values_list[i] + ', '
-		else:
-			values_keys_sqlite3_format += values_keys_list[len(values_keys_list) - 1]
-			values_values_sqlite3_format += values_values_list[len(values_values_list) - 1]
-		self.cursor.execute(f"INSERT INTO {self.table} ({values_keys_sqlite3_format}) VALUES ({values_values_sqlite3_format})")
+	
+	def create(self, table, **kwargs):
+		var = ["{} {}".format(key.strip(), value.strip().upper()) for key, value in kwargs.items()]
+		self.cursor.execute("CREATE TABLE IF NOT EXISTS {t}({v})".format(t=table, v=', '.join(var)))
 		self.db.commit()
-	def search(self, **parametr):
-		result = []
-		for i in parametr.items():
-			try:
-				self.cursor.execute(f"SELECT * FROM {self.table} WHERE {i[0]} = '{parametr[i[0]]}'")
-			except KeyError:
-				pass
-			except sql.OperationalError:
-				pass
-			else:
-				result.append(self.cursor.fetchall())
-		return result
+	def delete(self, table):
+		self.cursor.execute("DROP TABLE {t}".format(t=table))
+	def log(self, table, **kwargs):
+		keys = []
+		for key in kwargs.keys():
+			keys.append(key.strip())
+		values = []
+		for value in kwargs.values():
+			values.append(value.strip())
+		self.cursor.execute("INSERT INTO {t} ({k}) VALUES ({v})".format(t=table, k=', '.join(keys), v=', '.join(values)))
+		self.db.commit()
+	def search_with_and(self, table, **kwargs):
+		assert len(kwargs) > 1
+		crit = ["{v} {c}".format(v=key.strip(), c=value.strip()) for key, value in kwargs.items()]
+		#print("SELECT * FROM {t} WHERE {c}".format(t=table, c=' AND '.join(crit)))
+		self.cursor.execute("SELECT * FROM {t} WHERE {c}".format(t=table, c=' AND '.join(crit)))
+		self.db.commit()
+		for request in self.cursor.fetchall():
+			yield request
+	def search_with_or(self, table, **kwargs):
+		assert len(kwargs) > 1
+		crit = ["{v} {c}".format(v=key.strip(), c=value.strip()) for key, value in kwargs.items()]
+		self.cursor.execute("SELECT * FROM {t} WHERE {c}".format(t=table, c=' OR '.join(crit)))
+		self.db.commit()
+		for request in self.cursor.fetchall():
+			yield request
