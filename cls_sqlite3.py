@@ -51,8 +51,7 @@ class DataBase(sqlite3.Connection):
 		for var, crit in kwargs.items():
 			self.cursor.execute("SELECT * FROM {t} WHERE {v} {c}".format(t=table, v=var.strip(), c=crit.strip()))
 			break
-		for request in self.cursor.fetchall():
-			yield request
+		yield from self.cursor.fetchall()
 	def search_with_and(self, table, **kwargs):
 		'''
 		table is the name of table you want to use
@@ -64,8 +63,7 @@ class DataBase(sqlite3.Connection):
 		assert len(kwargs) > 1
 		crit = ["{v} {c}".format(v=key.strip(), c=value.strip()) for key, value in kwargs.items()]
 		self.cursor.execute("SELECT * FROM {t} WHERE {c}".format(t=table, c=' AND '.join(crit)))
-		for request in self.cursor.fetchall():
-			yield request
+		yield from self.cursor.fetchall()
 	def search_with_or(self, table, **kwargs):
 		'''
 		table is the name of table you want to use
@@ -77,5 +75,4 @@ class DataBase(sqlite3.Connection):
 		assert len(kwargs) > 1
 		crit = ["{v} {c}".format(v=key.strip(), c=value.strip()) for key, value in kwargs.items()]
 		self.cursor.execute("SELECT * FROM {t} WHERE {c}".format(t=table, c=' OR '.join(crit)))
-		for request in self.cursor.fetchall():
-			yield request
+		yield from self.cursor.fetchall()
